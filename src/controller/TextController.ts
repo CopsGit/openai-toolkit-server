@@ -1,16 +1,10 @@
-import {Response} from 'express'
+import {Request, Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
-const activityModel = require('../models/activity')
-const userModel = require('../models/user')
 import { Configuration, OpenAIApi } from "openai";
+import openai from "../openai-api";
 
 require('dotenv').config()
-
-const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
 
 export class TextController {
     static namePet = async (req: CustomRequest, res: Response) => {
@@ -30,7 +24,7 @@ Names:`;
 
         const completion = await openai.createCompletion({
             model: "text-davinci-002",
-            prompt: generateImg(req.body.animal),
+            prompt: generateImg(req.params.animal),
             temperature: 0.6,
         });
         return res.status(200).json(new Error(completion.data.choices[0].text, StatusCode.E200, Message.OK));

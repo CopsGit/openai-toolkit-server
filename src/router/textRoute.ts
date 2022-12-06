@@ -1,10 +1,11 @@
 import { Router } from 'express'
-import {TextController} from "../controller/TextController";
+import {UserController} from "../controller/UserController";
 import {verifyUser} from "../middleware/auth/AuthMiddleware";
+import {TextController} from "../controller/TextController";
 
 
 const textRouter = Router()
 
-textRouter.get('/', verifyUser, TextController.getAllActivities)
+textRouter.get('/petName/:animal', TextController.namePet)
 
 export default textRouter
