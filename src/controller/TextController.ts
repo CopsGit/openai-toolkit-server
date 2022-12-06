@@ -34,13 +34,11 @@ Names:`;
         let image_url = null;
         try{
             const description = req.body.description;
-            console.log(description);
             const response = await openai.createImage({
                 prompt: description,
-                n: 10,
-                size: "1024x1024",
+                n: 5,
+                size: "256x256",
             });
-            console.log(response.data);
             image_url = response.data.data;
         } catch (e) {
             return res.status(StatusCode.E500).send(new Error(e, StatusCode.E500, Message.ErrCreate))
