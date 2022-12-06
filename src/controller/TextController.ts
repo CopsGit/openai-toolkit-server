@@ -29,4 +29,22 @@ Names:`;
         });
         return res.status(200).json(new Error(completion.data.choices[0].text, StatusCode.E200, Message.OK));
     }
+
+    static textToImg = async (req: CustomRequest, res: Response) => {
+        let image_url = null;
+        try{
+            const description = req.body.description;
+            console.log(description);
+            const response = await openai.createImage({
+                prompt: description,
+                n: 10,
+                size: "1024x1024",
+            });
+            console.log(response.data);
+            image_url = response.data.data;
+        } catch (e) {
+            return res.status(StatusCode.E500).send(new Error(e, StatusCode.E500, Message.ErrCreate))
+        }
+        return res.status(200).json(new Error(image_url, StatusCode.E200, Message.OK));
+    }
 }

@@ -7,5 +7,6 @@ import {TextController} from "../controller/TextController";
 const textRouter = Router()
 
 textRouter.get('/petName/:animal', TextController.namePet)
+textRouter.post('/img', TextController.textToImg)
 
 export default textRouter
