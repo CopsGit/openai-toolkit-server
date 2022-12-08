@@ -4,8 +4,11 @@ import bodyParser from 'body-parser'
 import cors from 'cors'
 import express, {Application, Request, Response} from "express";
 import { connectToServer } from "./data-source";
+import {createClient} from 'redis'
 
 dotenv.config()
+
+export const redisClient = createClient({url: 'redis://localhost:6379'})
 
 const startServer = async () => {
     const app: Application = express()
@@ -18,6 +21,9 @@ const startServer = async () => {
     }))
 
     app.use(routers)
+
+    redisClient.on("error", (error) => console.error(`Error : ${error}`));
+    await redisClient.connect()
 
     // error handler
     app.use((req: Request, res: Response) => {
