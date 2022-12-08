@@ -15,7 +15,7 @@ export class TextController {
         let image_url = null;
         try{
             const description = req.body.description;
-            image_url = await getOrSetRedisCache("photos", defaultExpireTime, async () => {
+            image_url = await getOrSetRedisCache(`photos?description=${description}`, defaultExpireTime, async () => {
                 const response = await openai.createImage({
                     prompt: description,
                     n: 5,
