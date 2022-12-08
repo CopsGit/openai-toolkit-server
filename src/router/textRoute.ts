@@ -8,5 +8,6 @@ const textRouter = Router()
 
 textRouter.get('/petName/:animal', TextController.namePet)
 textRouter.post('/img', TextController.textToImg)
+textRouter.post('/test', TextController.redisTest)
 
 export default textRouter

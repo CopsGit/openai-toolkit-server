@@ -3,10 +3,44 @@ import Error, {Message, StatusCode} from "../util/Error";
 import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
 import { Configuration, OpenAIApi } from "openai";
 import openai from "../openai-api";
+import {redisClient} from "../index";
 
 require('dotenv').config()
 
+const defaultExpireTime = 600
+
 export class TextController {
+    static redisTest = async (req: Request, res: Response) => {
+        let image_url = null;
+        try{
+            const reply = await redisClient.get('photos').catch((err) => {
+                return res.status(StatusCode.E500).send(new Error(err, StatusCode.E500, Message.ErrCreate))
+            })
+            if (reply !== null) {
+                if (typeof reply === "string") {
+                    image_url = JSON.parse(reply);
+                } else {
+                    image_url = reply;
+                }
+                console.log('redis hit')
+            } else {
+                const description = req.body.description;
+                console.log('redis miss')
+                const response = await openai.createImage({
+                    prompt: description,
+                    n: 5,
+                    size: "256x256",
+                });
+                console.log(response)
+                image_url = response.data.data;
+                await redisClient.setEx('photos', defaultExpireTime, JSON.stringify(image_url))
+            }
+        } catch (e) {
+            return res.status(StatusCode.E500).send(new Error(e, StatusCode.E500, Message.ErrCreate))
+        }
+        return res.status(200).json(new Error(image_url, StatusCode.E200, Message.OK));
+    }
+
     static namePet = async (req: CustomRequest, res: Response) => {
 
         const generateImg = (animal: any) => {
