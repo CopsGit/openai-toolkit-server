@@ -7,6 +7,7 @@ let db: any;
 
 export const connectToServer = async () => {
     try{
+        mongoose.set('strictQuery', true)
         await mongoose.connect(`${process.env.MONGODB_BASE_URL}${process.env.MONGODB_DATABASE_NAME}`, {
             authSource: "admin",
             user: process.env.MONGODB_USERNAME,

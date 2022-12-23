@@ -1,10 +1,10 @@
 import {Request, Response} from 'express'
 import Error, {Message, StatusCode} from "../util/Error";
-import {CustomRequest, JwtPayload} from "../middleware/auth/AuthMiddleware";
-import { Configuration, OpenAIApi } from "openai";
+import {CustomRequest} from "../middleware/auth/AuthMiddleware";
 import openai from "../openai-api";
-import {redisClient} from "../index";
 import getOrSetRedisCache from "../util/getOrSetRedisCache";
+import * as fs from "fs";
+import path from "path";
 
 require('dotenv').config()
 
@@ -23,27 +23,6 @@ export class TextController {
                 });
                 return response.data.data;
             })
-            // const reply = await redisClient.get(`photos?description=${description}`).catch((err) => {
-            //     return res.status(StatusCode.E500).send(new Error(err, StatusCode.E500, Message.ErrCreate))
-            // })
-            // if (reply) {
-            //     if (typeof reply === "string") {
-            //         image_url = JSON.parse(reply);
-            //     } else {
-            //         image_url = reply;
-            //     }
-            //     console.log('redis hit')
-            // } else {
-            //     console.log('redis miss')
-            //     const response = await openai.createImage({
-            //         prompt: description,
-            //         n: 5,
-            //         size: "256x256",
-            //     });
-            //     console.log(response)
-            //     image_url = response.data.data;
-            //     await redisClient.setEx(`photos?description=${description}`, defaultExpireTime, JSON.stringify(image_url))
-            // }
         } catch (e) {
             return res.status(StatusCode.E500).send(new Error(e, StatusCode.E500, Message.ErrCreate))
         }
@@ -51,26 +30,32 @@ export class TextController {
     }
 
     static namePet = async (req: CustomRequest, res: Response) => {
-
-        const generateImg = (animal: any) => {
+        const generateName = (animal: any) => {
             const capitalizedAnimal =
                 animal[0].toUpperCase() + animal.slice(1).toLowerCase();
-            return `Suggest three names for an animal that is a superhero.
-
-Animal: Cat
-Names: Captain Sharpclaw, Agent Fluffball, The Incredible Feline
-Animal: Dog
-Names: Ruff the Protector, Wonder Canine, Sir Barks-a-Lot
-Animal: ${capitalizedAnimal}
-Names:`;
+            return `Animal: ${capitalizedAnimal} Names:`;
         }
 
         const completion = await openai.createCompletion({
             model: "text-davinci-002",
-            prompt: generateImg(req.params.animal),
+            prompt: generateName(req.params.animal),
             temperature: 0.6,
         });
         return res.status(200).json(new Error(completion.data.choices[0].text, StatusCode.E200, Message.OK));
+    }
+
+    static conversation = async (req: CustomRequest, res: Response) => {
+        const response = await openai.createCompletion({
+            model: "text-davinci-003",
+            prompt: req.body.conversation,
+            temperature: 0.9,
+            max_tokens: 150,
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0.6,
+            stop: [" Human:", " AI:"],
+        });
+        return res.status(200).json(new Error(response.data.choices[0].text, StatusCode.E200, Message.OK));
     }
 
     static textToImg = async (req: CustomRequest, res: Response) => {
@@ -87,5 +72,44 @@ Names:`;
             return res.status(StatusCode.E500).send(new Error(e, StatusCode.E500, Message.ErrCreate))
         }
         return res.status(200).json(new Error(image_url, StatusCode.E200, Message.OK));
+    }
+
+    static imgEditMask = async (req: Request, res: Response) => {
+        try {
+            // const createImg = async () => {
+            //     const rawBuffer: Buffer = await Buffer.from(req.body.image, 'base64');
+            //
+            //     const writeStream = fs.createWriteStream(path.join(__dirname, 'image.png'));
+            //     writeStream.write(rawBuffer);
+            //     writeStream.end();
+            // }
+            // createImg().then()
+            const uploadedFile = (req as any).files;
+            console.log(uploadedFile)
+            // const imageData = await fs.readFileSync(path.join(__dirname, 'image.png'));
+            // const uploadedFile = req.files.file;
+            const buffer = Buffer.from(req.body.image, 'base64');
+            console.log(buffer)
+
+            const file: any = buffer;
+// Set a `name` that ends with .png so that the API knows it's a PNG image
+            file.name = "image.png";
+
+            const response = await openai.createImageVariation(
+                file,
+                1,
+                "256x256"
+            );
+
+            return res.status(200).send(new Error(response.data, StatusCode.E200, Message.OK));
+        }  catch (error) {
+        if (error.response) {
+            console.log(error.response.status);
+            console.log(error.response.data);
+        } else {
+            console.log(error.message);
+        }
+        return res.status(StatusCode.E500).json(new Error(error, StatusCode.E500, Message.ErrCreate))
+    }
     }
 }
