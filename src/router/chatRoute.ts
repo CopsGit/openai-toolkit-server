@@ -4,6 +4,6 @@ import {ChatController} from "../controller/ChatController";
 
 const chatRouter = Router()
 
-chatRouter.get('/', ChatController.basicChat)
+chatRouter.post('/', ChatController.basicChat)
 
 export default chatRouter
